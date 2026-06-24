@@ -125,8 +125,7 @@ path.
 
 **From a GitHub Repository URL:**
 ```bash
-repo2readme run --url https://github.com/agsaru/repo2readme -o
-README_NEW.md
+repo2readme run --url https://github.com/agsaru/repo2readme -o README_NEW.md
 ```
 
 **From a Local Repository Path:**
