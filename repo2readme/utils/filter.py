@@ -29,7 +29,7 @@ IGNORE_EXTENSIONS = {
     ".zip", ".tar", ".gz", ".jar", ".war", ".ear",
     ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico",".txt",
     ".log", ".lock", ".db", ".sqlite", ".pdf",
-    ".csv" ,".json",".ipynb",".md"
+    ".csv" ,".json",".ipynb"
 }
 
 
@@ -40,12 +40,14 @@ def github_file_filter(path: str) -> bool:
 
     if base in IGNORE_FILES:
         return False
-    for d in IGNORE_DIRS:
-      if f"/{d}/" in lower or lower.endswith(f"/{d}"):
-        return False
-
+        
     _, ext = os.path.splitext(base)
     if ext in IGNORE_EXTENSIONS:
         return False
+
+    padded_path = f"/{lower}/"
+    for d in IGNORE_DIRS:
+        if f"/{d}/" in padded_path:
+            return False
 
     return True 

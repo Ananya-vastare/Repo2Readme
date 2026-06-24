@@ -1,17 +1,11 @@
 import click
 from rich import print as rprint
 from rich.progress import Progress
-
-
 from repo2readme.config import get_api_keys,reset_api_keys
 import os
-
-from repo2readme.loaders.repo_loader import RepoLoader
 from repo2readme.utils.tree import generate_tree
-
-from repo2readme.summarize.summary import summarize_file
 from repo2readme.utils.detect_language import detect_lang
-from repo2readme.readme.agent_workflow import workflow
+
 @click.group()
 def main():
    """
@@ -37,6 +31,10 @@ def run(url, local, output):
         return
 
     source = url if url else local
+    
+    from repo2readme.loaders.repo_loader import RepoLoader
+    from repo2readme.summarize.summary import summarize_file
+    from repo2readme.readme.agent_workflow import workflow
 
     with Progress() as progress:
         task = progress.add_task("[cyan]Loading repository...", total=1)
