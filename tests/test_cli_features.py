@@ -40,6 +40,71 @@ def test_dry_run_mode(monkeypatch, tmp_path):
     assert "No API requests were made." in result.output
 
 
+def test_dry_run_shows_skipped_files(monkeypatch, tmp_path):
+    # Create some files including ones that should be skipped
+    file1 = tmp_path / "main.py"
+    file1.write_text("print('hello')", encoding="utf-8")
+    
+    file2 = tmp_path / "README.md"
+    file2.write_text("# README", encoding="utf-8")
+    
+    file3 = tmp_path / "large.py"
+    file3.write_text("x" * 2000, encoding="utf-8")  # Exceeds 1 KB limit
+    
+    file4 = tmp_path / "node_modules"
+    file4.mkdir()
+    file5 = file4 / "package.json"
+    file5.write_text("{}", encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli_main.main,
+        [
+            "run",
+            "--local", str(tmp_path),
+            "--dry-run",
+            "--exclude", "*.md",
+            "--max-file-size-kb", "1"
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Skipped Files Summary" in result.output
+    assert "excluded by pattern" in result.output
+    assert "exceeds maximum file size" in result.output
+    assert "ignored by default rules" in result.output
+
+def test_dry_run_shows_unknown_skip_reasons(monkeypatch, tmp_path):
+    file1 = tmp_path / "main.py"
+    file1.write_text("print('hello')", encoding="utf-8")
+
+    import repo2readme.loaders.repo_loader as rl_module
+    original_load = rl_module.RepoLoader.load
+
+    def fake_load(self, return_skip_info=False):
+        docs, root_path, loader = original_load(self, return_skip_info=False)
+        skipped = [
+            ("README.md", "excluded by pattern"),
+            ("custom.txt", "my custom reason"),
+        ] if return_skip_info else []
+        if return_skip_info:
+            return docs, root_path, loader, skipped
+        return docs, root_path, loader
+
+    monkeypatch.setattr(rl_module.RepoLoader, "load", fake_load)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli_main.main,
+        ["run", "--local", str(tmp_path), "--dry-run"],
+    )
+
+    assert result.exit_code == 0
+    assert "Skipped Files Summary" in result.output
+    assert "excluded by pattern" in result.output
+    assert "my custom reason" in result.output
+
+
 def test_normal_run_user_declines(monkeypatch, tmp_path):
     file1 = tmp_path / "main.py"
     file1.write_text("print('hello')", encoding="utf-8")
